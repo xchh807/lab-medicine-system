@@ -1,0 +1,12 @@
+{
+  "name": "lab-medicine-system",
+  "version": "1.0.0",
+  "description": "实验室药品管理系统",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0"
+  }
+}

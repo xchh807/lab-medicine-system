@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实验室药品管理系统</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --success-color: #2ecc71;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+        }
+        
+        .tabs {
+            display: flex;
+            background-color: white;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+        
+        .tab.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button.danger {
+            background-color: var(--accent-color);
+        }
+        
+        button.danger:hover {
+            background-color: #c0392b;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .low-stock {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+        
+        .search-box {
+            margin-bottom: 20px;
+        }
+        
+        .share-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        
+        .share-url {
+            display: flex;
+            margin-top: 10px;
+        }
+        
+        .share-url input {
+            flex: 1;
+            margin-right: 10px;
+        }
+        
+        .notification {
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .notification.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .notification.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            th, td {
+                padding: 8px 10px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <h1>实验室药品管理系统</h1>
+                <button id="exportBtn">导出数据</button>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" data-tab="inventory">药品清单</div>
+            <div class="tab" data-tab="usage">使用记录</div>
+            <div class="tab" data-tab="add">添加药品</div>
+            <div class="tab" data-tab="share">分享数据</div>
+        </div>
+        
+        <div id="notification" class="notification"></div>
+        
+        <!-- 药品清单标签页 -->
+        <div id="inventory" class="tab-content active">
+            <h2>药品清单</h2>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索药品名称...">
+            </div>
+            <table id="inventoryTable">
+                <thead>
+                    <tr>
+                        <th>药品名称</th>
+                        <th>库存量</th>
+                        <th>单位</th>
+                        <th>供应商</th>
+                        <th>存放位置</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryBody">
+                    <!-- 药品数据将通过JavaScript动态加载 -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 使用记录标签页 -->
+        <div id="usage" class="tab-content">
+            <h2>药品使用记录</h2>
+            <table id="usageTable">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>药品名称</th>
+                        <th>使用量</th>
+                        <th>使用人</th>
+                        <th>用途</th>
+                    </tr>
+                </thead>
+                <tbody id="usageBody">
+                    <!-- 使用记录数据将通过JavaScript动态加载 -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 添加药品标签页 -->
+        <div id="add" class="tab-content">
+            <h2>添加新药品</h2>
+            <form id="addMedicineForm">
+                <div class="form-group">
+                    <label for="medicineName">药品名称 *</label>
+                    <input type="text" id="medicineName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="initialStock">初始库存 *</label>
+                    <input type="number" id="initialStock" min="0" step="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="unit">单位 *</label>
+                    <input type="text" id="unit" placeholder="如：克、毫升、瓶" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="supplier">供应商</label>
+                    <input type="text" id="supplier">
+                </div>
+                
+                <div class="form-group">
+                    <label for="location">存放位置</label>
+                    <input type="text" id="location">
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">备注</label>
+                    <textarea id="notes" rows="3"></textarea>
+                </div>
+                
+                <button type="submit">添加药品</button>
+            </form>
+        </div>
+        
+        <!-- 分享数据标签页 -->
+        <div id="share" class="tab-content">
+            <h2>分享药品数据</h2>
+            <p>生成一个包含当前药品数据的链接，您可以分享此链接给其他人查看。</p>
+            
+            <div class="share-section">
+                <button id="generateShareLink">生成分享链接</button>
+                
+                <div class="share-url" style="display: none;" id="shareUrlContainer">
+                    <input type="text" id="shareUrl" readonly>
+                    <button id="copyUrl">复制链接</button>
+                </div>
+            </div>
+            
+            <div class="share-section">
+                <h3>导入分享数据</h3>
+                <p>粘贴分享链接以导入数据（将覆盖当前数据）：</p>
+                <div class="form-group">
+                    <input type="text" id="importUrl" placeholder="粘贴分享链接">
+                </div>
+                <button id="importData">导入数据</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑药品模态框 -->
+    <div id="editModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="background-color: white; margin: 5% auto; padding: 20px; width: 90%; max-width: 500px; border-radius: 5px;">
+            <h2>编辑药品信息</h2>
+            <form id="editMedicineForm">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label for="editName">药品名称 *</label>
+                    <input type="text" id="editName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editStock">当前库存 *</label>
+                    <input type="number" id="editStock" min="0" step="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editUnit">单位 *</label>
+                    <input type="text" id="editUnit" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editSupplier">供应商</label>
+                    <input type="text" id="editSupplier">
+                </div>
+                
+                <div class="form-group">
+                    <label for="editLocation">存放位置</label>
+                    <input type="text" id="editLocation">
+                </div>
+                
+                <div class="form-group">
+                    <label for="editNotes">备注</label>
+                    <textarea id="editNotes" rows="3"></textarea>
+                </div>
+                
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button type="button" id="cancelEdit">取消</button>
+                    <button type="submit">保存更改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 使用药品模态框 -->
+    <div id="useModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="background-color: white; margin: 5% auto; padding: 20px; width: 90%; max-width: 500px; border-radius: 5px;">
+            <h2>记录药品使用</h2>
+            <form id="useMedicineForm">
+                <input type="hidden" id="useId">
+                <div class="form-group">
+                    <label for="useAmount">使用量 *</label>
+                    <input type="number" id="useAmount" min="0.01" step="0.01" required>
+                    <span id="useUnit"></span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="useUser">使用人 *</label>
+                    <input type="text" id="useUser" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="usePurpose">用途</label>
+                    <textarea id="usePurpose" rows="3"></textarea>
+                </div>
+                
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button type="button" id="cancelUse">取消</button>
+                    <button type="submit">记录使用</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 药品数据模型
+        let medicines = [];
+        let usageRecords = [];
+        
+        // DOM 加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            setupEventListeners();
+            renderInventory();
+            renderUsageRecords();
+        });
+        
+        // 从本地存储加载数据
+        function loadData() {
+            // 检查URL中是否有分享的数据
+            const urlParams = new URLSearchParams(window.location.search);
+            const sharedData = urlParams.get('data');
+            
+            if (sharedData) {
+                try {
+                    const decodedData = decodeURIComponent(sharedData);
+                    const data = JSON.parse(atob(decodedData));
+                    medicines = data.medicines || [];
+                    usageRecords = data.usageRecords || [];
+                    showNotification('已成功导入分享数据', 'success');
+                    
+                    // 清除URL参数，避免刷新后重复导入
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } catch (e) {
+                    console.error('解析分享数据失败:', e);
+                    showNotification('分享数据格式错误，使用本地数据', 'error');
+                    loadFromLocalStorage();
+                }
+            } else {
+                loadFromLocalStorage();
+            }
+        }
+        
+        // 从本地存储加载数据
+        function loadFromLocalStorage() {
+            const savedMedicines = localStorage.getItem('labMedicines');
+            const savedUsageRecords = localStorage.getItem('labUsageRecords');
+            
+            if (savedMedicines) {
+                medicines = JSON.parse(savedMedicines);
+            }
+            
+            if (savedUsageRecords) {
+                usageRecords = JSON.parse(savedUsageRecords);
+            }
+        }
+        
+        // 保存数据到本地存储
+        function saveData() {
+            localStorage.setItem('labMedicines', JSON.stringify(medicines));
+            localStorage.setItem('labUsageRecords', JSON.stringify(usageRecords));
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 标签页切换
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    this.classList.add('active');
+                    document.getElementById(this.dataset.tab).classList.add('active');
+                });
+            });
+            
+            // 添加药品表单提交
+            document.getElementById('addMedicineForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                addMedicine();
+            });
+            
+            // 编辑药品表单提交
+            document.getElementById('editMedicineForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveMedicineEdit();
+            });
+            
+            // 使用药品表单提交
+            document.getElementById('useMedicineForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                recordMedicineUsage();
+            });
+            
+            // 取消编辑
+            document.getElementById('cancelEdit').addEventListener('click', function() {
+                document.getElementById('editModal').style.display = 'none';
+            });
+            
+            // 取消使用
+            document.getElementById('cancelUse').addEventListener('click', function() {
+                document.getElementById('useModal').style.display = 'none';
+            });
+            
+            // 搜索功能
+            document.getElementById('searchInput').addEventListener('input', function() {
+                renderInventory();
+            });
+            
+            // 生成分享链接
+            document.getElementById('generateShareLink').addEventListener('click', function() {
+                generateShareLink();
+            });
+            
+            // 复制链接
+            document.getElementById('copyUrl').addEventListener('click', function() {
+                copyToClipboard(document.getElementById('shareUrl'));
+            });
+            
+            // 导入数据
+            document.getElementById('importData').addEventListener('click', function() {
+                importSharedData();
+            });
+            
+            // 导出数据
+            document.getElementById('exportBtn').addEventListener('click', function() {
+                exportData();
+            });
+        }
+        
+        // 添加新药品
+        function addMedicine() {
+            const name = document.getElementById('medicineName').value;
+            const stock = parseFloat(document.getElementById('initialStock').value);
+            const unit = document.getElementById('unit').value;
+            const supplier = document.getElementById('supplier').value;
+            const location = document.getElementById('location').value;
+            const notes = document.getElementById('notes').value;
+            
+            if (!name || isNaN(stock) || !unit) {
+                showNotification('请填写必填字段', 'error');
+                return;
+            }
+            
+            const newMedicine = {
+                id: Date.now(), // 使用时间戳作为ID
+                name: name,
+                stock: stock,
+                unit: unit,
+                supplier: supplier,
+                location: location,
+                notes: notes,
+                createdAt: new Date().toISOString()
+            };
+            
+            medicines.push(newMedicine);
+            saveData();
+            renderInventory();
+            
+            // 重置表单
+            document.getElementById('addMedicineForm').reset();
+            showNotification('药品添加成功', 'success');
+            
+            // 切换到库存标签页
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector('.tab[data-tab="inventory"]').classList.add('active');
+            document.getElementById('inventory').classList.add('active');
+        }
+        
+        // 渲染药品清单
+        function renderInventory() {
+            const tbody = document.getElementById('inventoryBody');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            tbody.innerHTML = '';
+            
+            const filteredMedicines = medicines.filter(medicine => 
+                medicine.name.toLowerCase().includes(searchTerm)
+            );
+            
+            if (filteredMedicines.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">暂无药品数据</td></tr>';
+                return;
+            }
+            
+            filteredMedicines.forEach(medicine => {
+                const row = document.createElement('tr');
+                const stockClass = medicine.stock < 10 ? 'low-stock' : '';
+                
+                row.innerHTML = `
+                    <td>${medicine.name}</td>
+                    <td class="${stockClass}">${medicine.stock}</td>
+                    <td>${medicine.unit}</td>
+                    <td>${medicine.supplier || '-'}</td>
+                    <td>${medicine.location || '-'}</td>
+                    <td class="action-buttons">
+                        <button class="use-btn" data-id="${medicine.id}">使用</button>
+                        <button class="edit-btn" data-id="${medicine.id}">编辑</button>
+                        <button class="delete-btn danger" data-id="${medicine.id}">删除</button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            // 添加按钮事件监听器
+            document.querySelectorAll('.use-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    openUseModal(parseInt(this.dataset.id));
+                });
+            });
+            
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    openEditModal(parseInt(this.dataset.id));
+                });
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (confirm('确定要删除这个药品吗？此操作不可撤销。')) {
+                        deleteMedicine(parseInt(this.dataset.id));
+                    }
+                });
+            });
+        }
+        
+        // 打开编辑药品模态框
+        function openEditModal(id) {
+            const medicine = medicines.find(m => m.id === id);
+            if (!medicine) return;
+            
+            document.getElementById('editId').value = medicine.id;
+            document.getElementById('editName').value = medicine.name;
+            document.getElementById('editStock').value = medicine.stock;
+            document.getElementById('editUnit').value = medicine.unit;
+            document.getElementById('editSupplier').value = medicine.supplier || '';
+            document.getElementById('editLocation').value = medicine.location || '';
+            document.getElementById('editNotes').value = medicine.notes || '';
+            
+            document.getElementById('editModal').style.display = 'block';
+        }
+        
+        // 保存药品编辑
+        function saveMedicineEdit() {
+            const id = parseInt(document.getElementById('editId').value);
+            const name = document.getElementById('editName').value;
+            const stock = parseFloat(document.getElementById('editStock').value);
+            const unit = document.getElementById('editUnit').value;
+            const supplier = document.getElementById('editSupplier').value;
+            const location = document.getElementById('editLocation').value;
+            const notes = document.getElementById('editNotes').value;
+            
+            if (!name || isNaN(stock) || !unit) {
+                showNotification('请填写必填字段', 'error');
+                return;
+            }
+            
+            const medicineIndex = medicines.findIndex(m => m.id === id);
+            if (medicineIndex !== -1) {
+                medicines[medicineIndex] = {
+                    ...medicines[medicineIndex],
+                    name,
+                    stock,
+                    unit,
+                    supplier,
+                    location,
+                    notes
+                };
+                
+                saveData();
+                renderInventory();
+                document.getElementById('editModal').style.display = 'none';
+                showNotification('药品信息更新成功', 'success');
+            }
+        }
+        
+        // 打开使用药品模态框
+        function openUseModal(id) {
+            const medicine = medicines.find(m => m.id === id);
+            if (!medicine) return;
+            
+            document.getElementById('useId').value = medicine.id;
+            document.getElementById('useAmount').value = '';
+            document.getElementById('useUnit').textContent = medicine.unit;
+            document.getElementById('useUser').value = '';
+            document.getElementById('usePurpose').value = '';
+            
+            document.getElementById('useModal').style.display = 'block';
+        }
+        
+        // 记录药品使用
+        function recordMedicineUsage() {
+            const id = parseInt(document.getElementById('useId').value);
+            const amount = parseFloat(document.getElementById('useAmount').value);
+            const user = document.getElementById('useUser').value;
+            const purpose = document.getElementById('usePurpose').value;
+            
+            if (isNaN(amount) || amount <= 0 || !user) {
+                showNotification('请填写必填字段', 'error');
+                return;
+            }
+            
+            const medicineIndex = medicines.findIndex(m => m.id === id);
+            if (medicineIndex === -1) return;
+            
+            if (medicines[medicineIndex].stock < amount) {
+                showNotification('库存不足，无法完成使用记录', 'error');
+                return;
+            }
+            
+            // 更新库存
+            medicines[medicineIndex].stock -= amount;
+            
+            // 添加使用记录
+            const usageRecord = {
+                id: Date.now(),
+                medicineId: id,
+                medicineName: medicines[medicineIndex].name,
+                amount: amount,
+                user: user,
+                purpose: purpose,
+                date: new Date().toISOString()
+            };
+            
+            usageRecords.unshift(usageRecord); // 添加到开头，使最新记录显示在最上面
+            saveData();
+            renderInventory();
+            renderUsageRecords();
+            document.getElementById('useModal').style.display = 'none';
+            showNotification('使用记录已保存', 'success');
+        }
+        
+        // 删除药品
+        function deleteMedicine(id) {
+            medicines = medicines.filter(m => m.id !== id);
+            // 同时删除相关的使用记录
+            usageRecords = usageRecords.filter(r => r.medicineId !== id);
+            saveData();
+            renderInventory();
+            renderUsageRecords();
+            showNotification('药品已删除', 'success');
+        }
+        
+        // 渲染使用记录
+        function renderUsageRecords() {
+            const tbody = document.getElementById('usageBody');
+            tbody.innerHTML = '';
+            
+            if (usageRecords.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">暂无使用记录</td></tr>';
+                return;
+            }
+            
+            usageRecords.forEach(record => {
+                const row = document.createElement('tr');
+                const date = new Date(record.date);
+                const formattedDate = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                
+                row.innerHTML = `
+                    <td>${formattedDate}</td>
+                    <td>${record.medicineName}</td>
+                    <td>${record.amount}</td>
+                    <td>${record.user}</td>
+                    <td>${record.purpose || '-'}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        // 生成分享链接
+        function generateShareLink() {
+            const data = {
+                medicines: medicines,
+                usageRecords: usageRecords
+            };
+            
+            const jsonString = JSON.stringify(data);
+            const encodedData = btoa(jsonString);
+            const shareUrl = `${window.location.origin}${window.location.pathname}?data=${encodeURIComponent(encodedData)}`;
+            
+            document.getElementById('shareUrl').value = shareUrl;
+            document.getElementById('shareUrlContainer').style.display = 'flex';
+            showNotification('分享链接已生成', 'success');
+        }
+        
+        // 导入分享数据
+        function importSharedData() {
+            const importUrl = document.getElementById('importUrl').value;
+            if (!importUrl) {
+                showNotification('请输入分享链接', 'error');
+                return;
+            }
+            
+            try {
+                const url = new URL(importUrl);
+                const sharedData = url.searchParams.get('data');
+                
+                if (!sharedData) {
+                    showNotification('无效的分享链接', 'error');
+                    return;
+                }
+                
+                const decodedData = decodeURIComponent(sharedData);
+                const data = JSON.parse(atob(decodedData));
+                
+                if (confirm('导入数据将覆盖当前所有数据，确定要继续吗？')) {
+                    medicines = data.medicines || [];
+                    usageRecords = data.usageRecords || [];
+                    saveData();
+                    renderInventory();
+                    renderUsageRecords();
+                    showNotification('数据导入成功', 'success');
+                    document.getElementById('importUrl').value = '';
+                }
+            } catch (e) {
+                console.error('导入数据失败:', e);
+                showNotification('无效的分享链接', 'error');
+            }
+        }
+        
+        // 导出数据为JSON文件
+        function exportData() {
+            const data = {
+                medicines: medicines,
+                usageRecords: usageRecords,
+                exportDate: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `lab_medicines_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            showNotification('数据导出成功', 'success');
+        }
+        
+        // 复制到剪贴板
+        function copyToClipboard(element) {
+            element.select();
+            document.execCommand('copy');
+            showNotification('链接已复制到剪贴板', 'success');
+        }
+        
+        // 显示通知
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
